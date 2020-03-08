@@ -1,0 +1,8 @@
+.file-name-col {
+    display: flex;
+    align-items: center;
+}
+
+.file-name-col span {
+    padding: 0 6px 0 6px;
+}
