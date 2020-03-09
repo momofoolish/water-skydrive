@@ -17,22 +17,14 @@ function CheckBoxItem(props) {
 }
 
 //文件列表
-function FileList() {
+function FileList(props) {
 
     const [checkAll, setCheckAll] = useState(false);
     const [checkArray, setCheckArray] = useState([]);
 
-    const data = [
-        { id: '1', name: 'Racing car sprays burning fuel into crowd.' },
-        { id: '2', name: 'Japanese princess to wed commoner.' },
-        { id: '3', name: 'Australian walks 100km after outback crash.' },
-        { id: '4', name: 'Man charged over missing wedding girl.' },
-        { id: '5', name: 'Los Angeles battles huge wildfires.' },
-    ];
-
     const onCheckAllChange = () => {
         if (!checkAll) {
-            setCheckArray(data.map(item => { return item.id; }));
+            setCheckArray(props.dataSource.map(item => { return item.id; }));
         } else {
             setCheckArray([]);
         }
@@ -43,6 +35,13 @@ function FileList() {
     const getItemValue = (value) => {
         checkArray.push(value);
         console.log(checkArray)
+    }
+
+    //切换目录
+    const clickToChange = (e) => {
+        e.preventDefault();
+        //获取数据
+        props.changeDataSource('changeDataSource');
     }
 
     return (
@@ -58,13 +57,13 @@ function FileList() {
                     <Col span={6}>修改日期</Col>
                 </Row>
             }
-                dataSource={data}
+                dataSource={props.dataSource}
                 renderItem={item => (
                     <List.Item>
                         <Col span={14} className="file-name-col">
                             <CheckBoxItem value={item.id} getValue={getItemValue} defaultCheck={checkAll} />
                             <FolderFilled style={{ color: '#FFD659', fontSize: '28px' }} />
-                            <span>{item.name}</span>
+                            <a href="#change" onClick={clickToChange}>{item.name}</a>
                         </Col>
                         <Col span={4}>90g</Col>
                         <Col span={6}>2020-02-21</Col>
