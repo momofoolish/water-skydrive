@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 function instance() {
-    axios.defaults.baseURL = 'http://localhost:8081/api/';
-    axios.defaults.timeout = 5000;
+    axios.defaults.timeout = 15000;
     axios.defaults.withCredentials = true;
 }
 
@@ -10,8 +9,8 @@ const get = (url) => {
     instance(); return axios.get(url);
 }
 
-const put = (url) => {
-    instance(); return axios.put(url);
+const put = (url, data) => {
+    instance(); return axios.put(url, data, { headers: { "Content-Type": "application/json;charset=UTF-8" } });
 }
 
 const post = (url, data) => {
@@ -26,6 +25,11 @@ const del = (url) => {
     instance(); return axios.delete(url);
 }
 
+const postFiles = (url, data) => {
+    return axios.post(url, data, {}, { headers: { "Content-Type": "multipart/form-data" } });
+}
+
 export default {
-    get, put, post, del
+    get, put, post, del,
+    postFiles,
 }

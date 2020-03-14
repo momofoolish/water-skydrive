@@ -6,3 +6,12 @@
 .file-name-col span {
     padding: 0 6px 0 6px;
 }
+
+.list-icon-type {
+    color: '#336633';
+    font-size: '28px';
+}
+
+.a-file-click{
+    color: darkgrey;
+}
