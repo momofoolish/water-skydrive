@@ -4,30 +4,23 @@ import { FolderFilled, FileZipOutlined } from '@ant-design/icons';
 import moment from "moment";
 import './file-list.css';
 
-//复选框组子项
-function CheckBoxItem(props) {
-    const [check, setCheck] = useState(false);
-    const onChange = () => {
-        if (!check) { props.getValue(props.value); }
-        setCheck(!check);
-    }
-    var checkAll = props.defaultCheck;
-    return <Checkbox onChange={onChange} checked={checkAll ? checkAll : check} ></Checkbox>
-}
-
-//文件列表
+//文件列表（组件入口函数）
 function FileList(props) {
-    const [checkAll, setCheckAll] = useState(false);
-    const [checkArray, setCheckArray] = useState([]);
+    const [checkAll, setCheckAll] = useState(false);    //全选数组
+    const [checkArray] = useState([]);  //多选项数组    
+    //全选
     const onCheckAllChange = () => {
         if (!checkAll) {
-            setCheckArray(props.dataSource.map(item => { return item.id; }));
+            checkArray.splice(0, checkArray.length);
+            props.dataSource.files.map(item => { checkArray.push(item.id); return item.id; });
+            props.dataSource.folders.map(item => { checkArray.push(item.id); return item.id; });
         } else {
-            setCheckArray([]);
+            checkArray.splice(0, checkArray.length);
         }
         setCheckAll(!checkAll);
+        props.getIdArray(checkArray);
     }
-    var source = props.dataSource;
+    const getIdArray = ids => props.getOptionIdArray(ids);
     const ElementHeader = () => (
         <Row style={{ backgroundColor: "#f0f5ff" }}>
             <Col span={14}><Checkbox onChange={onCheckAllChange} checked={checkAll} > 文件名 </Checkbox></Col>
@@ -35,12 +28,14 @@ function FileList(props) {
             <Col span={6}>修改日期</Col>
         </Row>
     );
+    //开始渲染数据
+    var source = props.dataSource;
     const ElementFolderList = () => (
-        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll} type="folder"
-            onChangeFolder={props.onChangeFolder} />
+        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll} toParentIdArray={getIdArray}
+            onChangeFolder={props.onChangeFolder} type="folder" />
     );
     const ElementFilesList = () => (
-        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll}
+        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll} toParentIdArray={getIdArray}
             onChangeFolder={props.onChangeFolder} />
     );
     //记录三种状态：0 空内容，1 只有文件夹和文件，2 两种输出
@@ -64,15 +59,23 @@ function MyList(props) {
     const getItemValue = (value) => {
         props.checkArray.push(value);
     }
+    //取消选择
+    const cancelOption = (id) => {
+        var newArray = [];
+        props.checkArray.forEach(item => { if (item !== id) { newArray.push(item); } });
+        props.checkArray.splice(0, props.checkArray.length);
+        newArray.forEach(item => { props.checkArray.push(item); });
+    }
+    //渲染列表
     return (
         <List dataSource={props.type === "folder" ? props.dataSource.folders : props.dataSource.files} split={false}
             renderItem={item => (
-                <List.Item>
+                <List.Item className="my-list-item">
                     <DataType item={item} getValue={getItemValue} defaultCheck={props.checkAll} type={props.type}
-                        onChangeFolder={props.onChangeFolder} />
+                        onChangeFolder={props.onChangeFolder} cancelOption={cancelOption} checkArray={props.checkArray}
+                        toParentIdArray={props.toParentIdArray} />
                 </List.Item>
-            )} />
-    )
+            )} />)
 }
 
 //文件分类
@@ -81,8 +84,9 @@ function DataType(props) {
     return (
         <Fragment>
             <Col span={14} className="file-name-col">
-                <CheckBoxItem value={item.id} getValue={props.getValue} defaultCheck={props.defaultCheck} />
-                <IconType type={props.type} className="list-icon-type" />
+                <CheckBoxItem getValue={props.getValue} defaultCheck={props.defaultCheck} value={item.id}
+                    cancelOption={props.cancelOption} checkArray={props.checkArray} toParentIdArray={props.toParentIdArray} />
+                <div className="list-icon-type"><IconType type={props.type} /></div>
                 <a href="#c" onClick={(e) => props.onChangeFolder(item.parentId, item.id, item.name, e)}
                     className="a-file-click" >
                     {props.type === "folder" ? item.name : item.originalName}
@@ -99,6 +103,20 @@ function DataType(props) {
             <Col span={6}>{moment(item.lastUpdateTime).format('YYYY-MM-DD')}</Col>
         </Fragment>
     )
+}
+
+//复选框组子项
+function CheckBoxItem(props) {
+    const [checkItem, setItemCheck] = useState(false);
+    const [inAll, setInAll] = useState(true);
+    var checkAll = props.defaultCheck;
+    const toParentIdArray = () => { props.toParentIdArray(props.checkArray); }
+    const onChange = () => {
+        if (!checkItem && !checkAll) { props.getValue(props.value); } else { props.cancelOption(props.value); }
+        if (checkAll) { setInAll(!inAll) } else { setItemCheck(!checkItem);}
+        toParentIdArray();
+    }
+    return <Checkbox onChange={onChange} checked={checkAll ? inAll : checkItem} ></Checkbox>
 }
 
 //文件图标类型

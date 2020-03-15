@@ -8,10 +8,17 @@
 }
 
 .list-icon-type {
-    color: '#336633';
-    font-size: '28px';
+    display: inline-block;
+    color: #FFC107;
+    font-size: 28px;
 }
 
-.a-file-click{
-    color: darkgrey;
+.a-file-click {
+    color: rgb(117, 117, 117);
+}
+
+.my-list-item :hover {
+    background-color: rgba(169, 169, 169, 0.397);
+    transition: 800ms;
+    border-radius: 3px;
 }

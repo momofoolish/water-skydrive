@@ -21,8 +21,8 @@ const post = (url, data) => {
     });
 }
 
-const del = (url) => {
-    instance(); return axios.delete(url);
+const del = (url, data) => {
+    instance(); return axios.delete(url, data, { headers: { "Content-Type": "application/json;charset=UTF-8" } });
 }
 
 const postFiles = (url, data) => {
