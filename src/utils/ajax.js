@@ -22,7 +22,7 @@ const post = (url, data) => {
 }
 
 const del = (url, data) => {
-    instance(); return axios.delete(url, data, { headers: { "Content-Type": "application/json;charset=UTF-8" } });
+    instance(); return axios.delete(url, { data: data }, { headers: { "Content-Type": "application/x-www-form-urlencoded" } });
 }
 
 const postFiles = (url, data) => {

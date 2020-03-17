@@ -4,6 +4,7 @@ import { ShareAltOutlined, RestOutlined, ProfileOutlined } from '@ant-design/ico
 import { Switch, Route, useHistory } from 'react-router-dom';
 import Home from '../../views/home';
 import SearchView from '../../views/search';
+import RecycleBin from '../../views/recycle-bin';
 import './layout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -35,7 +36,7 @@ function MyLayout() {
                         <Menu.Item key="6">音乐</Menu.Item>
                         <Menu.Item key="7">其它</Menu.Item>
                         <Menu.Item key="8"><ShareAltOutlined />我的分享</Menu.Item>
-                        <Menu.Item key="9"><RestOutlined />回收站</Menu.Item>
+                        <Menu.Item key="9" onClick={() => { routerClick('/recycle_bin') }}><RestOutlined />回收站</Menu.Item>
                     </Menu>
                 </Sider>
 
@@ -46,6 +47,7 @@ function MyLayout() {
                             <Switch location={location}>
                                 <Route exact path="/" component={Home} />
                                 <Route path="/search/:key" component={SearchView} />
+                                <Route path="/recycle_bin" component={RecycleBin} />
                             </Switch>
                         )} />
                     </Content>

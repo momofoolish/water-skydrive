@@ -8,6 +8,8 @@ import '../css/home.css';
 
 const { Search } = Input;
 
+let idArray = [];   //用于删除操作的数组
+
 export default class Home extends React.Component {
 
     constructor(props) {
@@ -15,7 +17,7 @@ export default class Home extends React.Component {
         this.state = {
             data: '', spinning: true, parentId: -1, folderId: 0, folderName: '', visible: false, progressShow: 'none',
             confirmLoading: false, newFolderName: '', history: [{ pid: -1, id: 0, name: '' },], percent: 0, uploadSpeed: '',
-            delVisible: false, idArray: [],ids:''
+            delVisible: false,
         }
     }
 
@@ -71,7 +73,8 @@ export default class Home extends React.Component {
 
     //关闭
     onCancelHandler = () => {
-        this.setState({ visible: false, confirmLoading: false, delVisible: false });
+        this.setState({ visible: false, confirmLoading: false, delVisible: false, delDisable: true });
+        idArray = [''];
     }
 
     //文件名校验
@@ -133,30 +136,51 @@ export default class Home extends React.Component {
     //确定删除文件/文件夹
     onOkDelFile = () => {
         this.setState({ confirmLoading: true });
+        //判断是否有勾选文件/文件夹
+        if (idArray.length <= 0) {
+            this.setState({ confirmLoading: false, delVisible: false, });
+            message.warn("请选择需要删除的文件");
+            return;
+        }
         //将文件夹id和文件id分离开来
-        var folderIdArray = [];
-        var fileIdArray = [];
-        this.state.idArray.forEach(item => {
+        var folderIdArray = [], fileIdArray = [];
+        idArray.forEach(item => {
             if (typeof (item) !== 'number') { fileIdArray.push(item); } else { folderIdArray.push(item); }
         });
         //发送删除请求
         if (folderIdArray.length > 0) {
-            ajax.del("api/folder", { ids: folderIdArray }).then(response => {
-                console.log(response.data)
-            }).catch(error => { console.log(error); this.setState({ confirmLoading: false }); message.error("删除出错"); });
+            var jsonFolderData = new FormData();
+            jsonFolderData.append("ids", folderIdArray);
+            ajax.del("api/folder", jsonFolderData).then(response => {
+                var res = response.data;
+                if (res.code === 0) {
+                    this.setState({ confirmLoading: false, delVisible: false, data: res.data });
+                    message.success("删除成功");
+                }
+            }).catch(error => {
+                console.log(error); this.setState({
+                    confirmLoading: false, delVisible: false,
+                }); message.error("删除出错");
+            });
         }
         if (fileIdArray.length > 0) {
-            ajax.del("api/file", { files: fileIdArray }).then(response => {
-                console.log(response.data)
-            }).catch(error => { console.log(error); this.setState({ confirmLoading: false }); message.error("删除出错"); });
+            var jsonFilesData = new FormData();
+            jsonFilesData.append("ids", fileIdArray);
+            ajax.del("api/file", jsonFilesData).then(response => {
+                var res = response.data;
+                if (res.code === 0) {
+                    this.setState({ confirmLoading: false, delVisible: false, data: res.data });
+                    message.success("删除成功");
+                }
+            }).catch(error => {
+                console.log(error); this.setState({ confirmLoading: false, delVisible: false, });
+                message.error("删除出错");
+            });
         }
     }
 
     //获取勾选的文件id
-    setIdArray = (idArray) => {
-        this.setState({ idArray: idArray });
-        console.log(idArray)
-    }
+    setIdArray = (ids) => { if (ids.length > 0) { idArray = ids; } }
 
     render() {
         const { data, spinning, parentId, folderName, visible, confirmLoading, percent, progressShow, uploadSpeed,
@@ -184,7 +208,7 @@ export default class Home extends React.Component {
                         <Progress percent={percent} status="active" style={{ width: 150, display: progressShow }} />
                     </Col>
                     <Col span={6} style={{ textAlign: 'center' }}>
-                        <Button onClick={this.deleteFile} type="primary" icon={<DeleteRowOutlined />} >
+                        <Button onClick={this.deleteFile} type="primary" icon={<DeleteRowOutlined />}>
                             删除 </Button>
                     </Col>
                     <Col span={7} style={{ textAlign: 'right' }}>
@@ -212,8 +236,7 @@ export default class Home extends React.Component {
 
                 <Row>
                     <Col span={24} >
-                        <FileList dataSource={data} onChangeFolder={this.onChangeFolder} getIdArray={this.setIdArray}
-                            getOptionIdArray={ids => { this.setIdArray(ids); }} />
+                        <FileList dataSource={data} onChangeFolder={this.onChangeFolder} getIdArray={this.setIdArray} />
                     </Col>
                 </Row>
             </Fragment>
