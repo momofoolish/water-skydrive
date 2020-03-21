@@ -11,6 +11,9 @@ export default class SearchView extends React.Component {
         this.state = { data: '' }
     }
 
+    //搜索文件
+    onSearchHandler = (key) => { console.log(key) }
+
     render() {
 
         const { data } = this.state;
@@ -25,7 +28,7 @@ export default class SearchView extends React.Component {
                     <Col span={6} style={{ textAlign: 'center' }}></Col>
                     <Col span={6} style={{ textAlign: 'right' }}>
                         <Search placeholder="输入你要搜索的文件" style={{ width: 200 }} value={this.props.match.params.key}
-                            onSearch={value => console.log(value)} />
+                            onSearch={key => this.onSearchHandler(key)} />
                     </Col>
                 </Row><br />
 

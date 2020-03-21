@@ -1,56 +1,66 @@
 import React, { Fragment, useState } from 'react';
+import PureRenderMixin from 'react-addons-pure-render-mixin'
 import { List, Row, Col, Checkbox, } from 'antd';
 import { FolderFilled, FileZipOutlined } from '@ant-design/icons';
 import moment from "moment";
 import './file-list.css';
 
-//文件列表（组件入口函数）
-function FileList(props) {
-    const [checkAll, setCheckAll] = useState(false);    //全选数组
-    const [checkArray] = useState([]);  //多选项数组    
-    //变化时回调（全选选择框）
-    const onCheckAllChange = () => {
-        if (!checkAll) {
-            checkArray.splice(0, checkArray.length);
-            props.dataSource.files.map(item => { checkArray.push(item.id); return item.id; });
-            props.dataSource.folders.map(item => { checkArray.push(item.id); return item.id; });
-        } else {
-            checkArray.splice(0, checkArray.length);
+export default class FileList extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            checkAll: false, checkArray: [],
         }
-        setCheckAll(!checkAll);
-        props.getIdArray(checkArray);
+        this.shouldComponentUpdate = PureRenderMixin.shouldComponentUpdate(this);     //避免重复渲染
     }
-    const ElementHeader = () => (
-        <Row style={{ backgroundColor: "#f0f5ff" }}>
-            <Col span={14}>
-                <Checkbox onChange={onCheckAllChange} checked={checkAll} > 文件名 </Checkbox>
-            </Col>
-            <Col span={4}>大小</Col>
-            <Col span={6}>修改日期</Col>
-        </Row>
-    );
-    //开始渲染数据
-    var source = props.dataSource;
-    const ElementFolderList = () => (
-        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll} onItemChange={props.getIdArray}
-            onChangeFolder={props.onChangeFolder} type="folder" />
-    );
-    const ElementFilesList = () => (
-        <MyList dataSource={props.dataSource} checkArray={checkArray} checkAll={checkAll} onItemChange={props.getIdArray}
-            onChangeFolder={props.onChangeFolder} />
-    );
-    //记录三种状态：0 空内容，1 只有文件夹和文件，2 两种输出
-    const countState = (source === '') ? 0 : (source.files.length === 0 && source.folders.length === 0) ? 0 :
-        ((source.files.length !== 0 && source.folders.length !== 0) ? 2 : 1);
-    switch (countState) {
-        case 0: return <List></List>;
-        case 1: if (source.files.length !== 0) {
-            return <Fragment> <ElementHeader /><ElementFilesList /> </Fragment>;
-        } else {
-            return <Fragment> <ElementHeader /><ElementFolderList /></Fragment>;
+    
+    render() {
+        const { checkArray, checkAll } = this.state;
+        const _props = this.props;
+        //变化时回调（全选选择框）
+        const onCheckAllChange = () => {
+            if (!checkAll) {
+                checkArray.splice(0, checkArray.length);
+                _props.dataSource.files.map(item => { checkArray.push(item.id); return item.id; });
+                _props.dataSource.folders.map(item => { checkArray.push(item.id); return item.id; });
+            } else {
+                checkArray.splice(0, checkArray.length);
+            }
+            this.setState({ checkAll: !checkAll });
+            _props.getIdArray(checkArray);
         }
-        case 2: return <Fragment> <ElementHeader /><ElementFolderList /><ElementFilesList /> </Fragment>;
-        default: return <List></List>;
+        const ElementHeader = () => (
+            <Row style={{ backgroundColor: "#f0f5ff" }}>
+                <Col span={14}>
+                    <Checkbox onChange={onCheckAllChange} checked={checkAll} > 文件名 </Checkbox>
+                </Col>
+                <Col span={4}>大小</Col>
+                <Col span={6}>修改日期</Col>
+            </Row>
+        );
+        //开始渲染数据
+        var source = _props.dataSource;
+        const ElementFolderList = () => (
+            <MyList dataSource={_props.dataSource} checkArray={checkArray} checkAll={checkAll} onItemChange={_props.getIdArray}
+                onChangeFolder={_props.onChangeFolder} type="folder" />
+        );
+        const ElementFilesList = () => (
+            <MyList dataSource={_props.dataSource} checkArray={checkArray} checkAll={checkAll} onItemChange={_props.getIdArray}
+                onChangeFolder={_props.onChangeFolder} />
+        );
+        //记录三种状态：0 空内容，1 只有文件夹和文件，2 两种输出
+        const countState = (source === '') ? 0 : (source.files.length === 0 && source.folders.length === 0) ? 0 :
+            ((source.files.length !== 0 && source.folders.length !== 0) ? 2 : 1);
+        switch (countState) {
+            case 0: return <List></List>;
+            case 1: if (source.files.length !== 0) {
+                return <Fragment> <ElementHeader /><ElementFilesList /> </Fragment>;
+            } else {
+                return <Fragment> <ElementHeader /><ElementFolderList /></Fragment>;
+            }
+            case 2: return <Fragment> <ElementHeader /><ElementFolderList /><ElementFilesList /> </Fragment>;
+            default: return <List></List>;
+        }
     }
 }
 
@@ -127,5 +137,3 @@ function IconType(props) {
         default: return <FileZipOutlined />;
     }
 }
-
-export default FileList;

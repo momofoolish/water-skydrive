@@ -97,7 +97,7 @@ export default class RecycleBin extends React.Component {
                     <Col span={6}></Col>
                 </Row>
                 <div className="recycle-bin-spin">
-                    <Spin indicator={antIcon} delay={1000} spinning={dataLoading} tip="Loading" />
+                    <Spin indicator={antIcon} delay={500} spinning={dataLoading} tip="Loading" />
                 </div>
                 <Row className="recycle-bin-row-main">
                     <Col span={24} >
