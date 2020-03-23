@@ -6,9 +6,10 @@ import ajax from '../utils/ajax';
 import '../css/recycle-bin.css';
 
 const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
-let idArray = [];
 
 export default class RecycleBin extends React.Component {
+
+    child = React.createRef();
 
     state = {
         data: '', reductionLoading: false, clearLoading: false, dataLoading: true,
@@ -16,6 +17,7 @@ export default class RecycleBin extends React.Component {
 
     //回收永久删除文件/文件夹
     onClickToClean = () => {
+        var idArray = this.child.current.state.checkArray;
         if (idArray.length > 0) {
             this.setState({ clearLoading: true, dataLoading: true });
             var sId = [], iId = [];
@@ -42,6 +44,7 @@ export default class RecycleBin extends React.Component {
 
     //还原按钮
     onClickToReduction = () => {
+        var idArray = this.child.current.state.checkArray;
         if (idArray.length > 0) {
             this.setState({ reductionLoading: true });
             var sId = [], iId = [];
@@ -66,6 +69,7 @@ export default class RecycleBin extends React.Component {
         }
     }
 
+    //组件加载完成时调用
     componentDidMount() {
         ajax.get("/api/recycle").then(response => {
             var res = response.data;
@@ -74,9 +78,6 @@ export default class RecycleBin extends React.Component {
             }
         }).catch(error => { console.log(error) });
     }
-
-    //获取选中的id数组
-    setArrayId = (ids) => { if (ids.length > 0) { idArray = ids; } }
 
     render() {
         const { data, reductionLoading, clearLoading, dataLoading } = this.state;
@@ -101,8 +102,16 @@ export default class RecycleBin extends React.Component {
                 </div>
                 <Row className="recycle-bin-row-main">
                     <Col span={24} >
-                        {dataLoading ? '' : (<FileList dataSource={data} getIdArray={this.setArrayId}
-                            onChangeFolder={(a, b, c, e) => { console.log(a + b + c); e.preventDefault(); }} />)}
+                        {
+                            dataLoading ? '' :
+                                (
+                                    <FileList
+                                        dataSource={data} ref={this.child} viewName="recycleBin"
+                                        onChangeFolder={(a, b, c, e) => { console.log(a + b + c); e.preventDefault(); }}
+                                        updateSource={(result) => { this.setState({ data: result }) }}
+                                    />
+                                )
+                        }
                     </Col>
                 </Row>
             </Fragment>

@@ -1,6 +1,5 @@
 //上传数据封装
-const uploadFiles = (event,folderId) => {
-    var file = event.target.files[0];
+const uploadFiles = (file,folderId) => {
     let formData = new FormData();
     //判断文件是否超过 1g
     if (file.size > (2 * 1024 * 1024 * 1024)) {

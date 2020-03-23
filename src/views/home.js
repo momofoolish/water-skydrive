@@ -1,56 +1,22 @@
 import React, { Fragment } from 'react';
-import PureRenderMixin from 'react-addons-pure-render-mixin'
-import { Row, Col, Button, Input, Breadcrumb, Modal, Spin, message, Progress } from 'antd';
-import { UploadOutlined, DeleteRowOutlined } from '@ant-design/icons';
+import { Row, Col, Button, Input, Breadcrumb, Modal, Spin, message } from 'antd';
 import FileList from '../components/fileList/file-list';
 import ajax from '../utils/ajax';
-import uploadFiles from '../utils/uploadFile';
 import '../css/home.css';
+import MyUpLoad from '../components/upload/upload';
 
 const { Search } = Input;
-
-let idArray = [];   //用于删除操作的数组
-
 export default class Home extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            data: '', spinning: true, parentId: -1, folderId: 0, folderName: '', visible: false, progressShow: 'none',
-            confirmLoading: false, newFolderName: '', history: [{ pid: -1, id: 0, name: '' },], percent: 0, uploadSpeed: '',
-            delVisible: false, alterVisible: false, updateName: '',
+            data: '', spinning: true, parentId: -1, folderId: 0, folderName: '', visible: false,
+            confirmLoading: false, newFolderName: '', history: [{ pid: -1, id: 0, name: '' },],
+            updateName: '',
+            delLoading: false,
         }
-        this.shouldComponentUpdate = PureRenderMixin.shouldComponentUpdate(this);
-    }
-
-    //获取到文件信息立即上传
-    onChangeHandler = (e) => {
-        var formData = uploadFiles.uploadFiles(e, this.state.folderId);
-        var xhr = new XMLHttpRequest();
-        xhr.open('post', 'api/upload', true);
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var responseData = JSON.parse(xhr.responseText);
-                this.setState({ data: responseData.data });
-                message.success("success");
-                clearInterval(timer);
-            }
-        }
-        //计算上传进度回调时间
-        var everyTime = 0;
-        var timer = setInterval(() => everyTime++, 1000);
-        //上传进度监听&计算上传速度
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                var uploadSpeed = everyTime === 0 ? (e.loaded / 5) : (e.loaded / everyTime);
-                var speed = uploadSpeed > 1024 ? (uploadSpeed / 1024 > 1024 ? (uploadSpeed / 1024 / 1024).toFixed(2)
-                    + 'M/s' : Math.round(uploadSpeed / 1024) + 'K/s') : uploadSpeed + 'B/s';
-                this.setState({ percent: (100 * e.loaded / e.total).toFixed(2), uploadSpeed: speed });
-            }
-            console.log(everyTime)
-        }
-        xhr.send(formData);
-        this.setState({ progressShow: 'inline-block' });
+        this.child = React.createRef();
     }
 
     //新建文件夹弹出层
@@ -75,15 +41,11 @@ export default class Home extends React.Component {
 
     //关闭
     onCancelHandler = () => {
-        this.setState({ visible: false, confirmLoading: false, delVisible: false, delDisable: true, alterVisible: false });
-        idArray = [];
+        this.setState({ visible: false, confirmLoading: false, });
     }
 
     //文件名校验
     newFolderChange = (e) => { this.setState({ newFolderName: e.target.value }); }
-
-    //弹出上传对话框
-    uploadClick = () => { document.getElementById("upload-input").click(); }
 
     //弹出修改对话框
     alterName = () => { this.setState({ alterVisible: true }) }
@@ -133,120 +95,76 @@ export default class Home extends React.Component {
         }).catch(error => { this.setState({ spinning: false }); console.log(error) });
     }
 
-    //弹出删除文件/文件夹对话框
-    deleteFile = () => { this.setState({ delVisible: true }); }
-
-    //确定删除文件/文件夹
-    onOkDelFile = () => {
-        this.setState({ confirmLoading: true });
+    //批量删除文件
+    onClickDelHandler = () => {
+        console.log(this.child.current.state.checkArray)
+        var idArray = this.child.current.state.checkArray;
         //判断是否有勾选文件/文件夹
         if (idArray.length <= 0) {
-            this.setState({ confirmLoading: false, delVisible: false, });
-            message.warn("请选择需要删除的文件");
+            alert("请选择需要删除的文件");
             return;
         }
+        this.setState({ delLoading: true });
         //将文件夹id和文件id分离开来
         var folderIdArray = [], fileIdArray = [];
         idArray.forEach(item => {
             if (typeof (item) !== 'number') { fileIdArray.push(item); } else { folderIdArray.push(item); }
         });
         //发送删除请求
+        //删除文件夹
         if (folderIdArray.length > 0) {
             var jsonFolderData = new FormData();
             jsonFolderData.append("ids", folderIdArray);
             ajax.del("api/folder", jsonFolderData).then(response => {
                 var res = response.data;
                 if (res.code === 0) {
-                    this.setState({ confirmLoading: false, delVisible: false, data: res.data });
-                    message.success("删除成功");
+                    httpSuccess(res.data, "删除文件夹成功");
                 }
-            }).catch(error => {
-                console.log(error); this.setState({
-                    confirmLoading: false, delVisible: false,
-                }); message.error("删除出错");
-            });
+            }).catch(error => httpError(error, "删除出错"));
         }
+        // 删除文件
         if (fileIdArray.length > 0) {
             var jsonFilesData = new FormData();
             jsonFilesData.append("ids", fileIdArray);
             ajax.del("api/file", jsonFilesData).then(response => {
                 var res = response.data;
                 if (res.code === 0) {
-                    this.setState({ confirmLoading: false, delVisible: false, data: res.data });
-                    message.success("删除成功");
+                    httpSuccess(res.data, "删除文件成功");
                 }
-            }).catch(error => {
-                console.log(error); this.setState({ confirmLoading: false, delVisible: false, });
-                message.error("删除出错");
+            }).catch(error => httpError(error, "删除出错"));
+        }
+        //请求结果
+        const httpError = (error, msg) => { console.log(error); message.error(msg); }
+        const httpSuccess = (result, msg) => {
+            message.success(msg);
+            this.setState({
+                data: result,
+                delLoading: false,
             });
         }
     }
 
-    //更新名称input事件
-    alterOnChange = (e) => { this.setState({ updateName: e.target.value }); }
-
-    //确定修改文件/文件夹
-    onOkAlter = () => {
-        this.setState({ confirmLoading: true });
-        if (idArray.length === 1 && this.state.updateName !== "") {
-            var formData = new FormData();
-            formData.append("id", idArray[0]);
-            formData.append("name", this.state.updateName);
-            ajax.put("/api/folder", formData).then(response => {
-                var res = response.data;
-                if (res.code === 0) {
-                    message.success("修改成功");
-                    this.setState({ data: res.data, confirmLoading: false, alterVisible: false });
-                }
-            }).catch(error => { console.log(error); message.error("错误"); })
-        } else {
-            alert("请勿多选重命名/文件名不能为空");
-        }
-        idArray = [];
-    }
-
-    //获取勾选的文件id
-    setIdArray = (ids) => { if (ids.length > 0) { idArray = ids; } }
-
     render() {
-        const { data, spinning, parentId, folderName, visible, confirmLoading, percent, progressShow, uploadSpeed,
-            delVisible, alterVisible } = this.state;
+        const { data, spinning, parentId, folderName, visible, confirmLoading, folderId, delLoading } = this.state;
         if (spinning) return <div className="loading"><Spin tip="Loading" size="large" /></div>
         return (
             <Fragment>
-                <div>
-                    <Modal visible={visible} onOk={this.onOkHandler} confirmLoading={confirmLoading} title="新建文件夹"
-                        onCancel={this.onCancelHandler} okText="确定" cancelText="取消">
-                        <p><Input placeholder="输入文件夹名称" onChange={this.newFolderChange} /></p>
-                    </Modal>
-                    <Modal visible={delVisible} onOk={this.onOkDelFile} confirmLoading={confirmLoading} title="警告"
-                        onCancel={this.onCancelHandler} okText="确定" cancelText="取消">
-                        <p> 是否删除 这些文件/文件夹 ？ </p>
-                    </Modal>
-                    <Modal visible={alterVisible} onOk={this.onOkAlter} confirmLoading={confirmLoading} title="提示"
-                        onCancel={this.onCancelHandler} okText="确定" cancelText="取消">
-                        <p><Input placeholder="输入修改名称" onChange={this.alterOnChange} /></p>
-                    </Modal>
-                </div>
+                <Modal visible={visible} onOk={this.onOkHandler} confirmLoading={confirmLoading} title="新建文件夹"
+                    onCancel={this.onCancelHandler} okText="确定" cancelText="取消">
+                    <p><Input placeholder="输入文件夹名称" onChange={this.newFolderChange} /></p>
+                </Modal>
 
                 <Row style={{ alignItems: 'center' }}>
-                    <Col span={2}><Button onClick={this.uploadClick} type="primary" icon={<UploadOutlined />}>
-                        上传<input id="upload-input" style={{ display: 'none' }} type="file"
-                            onChange={this.onChangeHandler} /></Button></Col>
-                    <Col span={3} style={{ textAlign: 'center' }}> <Button onClick={this.newFolderClick}>
-                        新建文件夹</Button> </Col>
-                    <Col span={6} style={{ textAlign: 'left' }}>
-                        <span style={{ display: progressShow, marginRight: '1px' }}> {uploadSpeed} </span>
-                        <Progress percent={percent} status="active" style={{ width: 150, display: progressShow }} />
+                    <Col span={8}>
+                        <MyUpLoad folderId={folderId} returnData={(result) => { this.setState({ data: result }) }} />
+                        <Button onClick={this.newFolderClick}> 新建文件夹</Button>
                     </Col>
-                    <Col span={3} style={{ textAlign: 'center' }}>
-                        <Button onClick={this.alterName}> 重命名 </Button>
+                    <Col span={8}>
+                        <Button onClick={this.onClickDelHandler} loading={delLoading}>
+                            删除文件
+                        </Button>
                     </Col>
-                    <Col span={3}>
-                        <Button onClick={this.deleteFile} type="primary" icon={<DeleteRowOutlined />}>
-                            删除 </Button>
-                    </Col>
-                    <Col span={7} style={{ textAlign: 'right' }}>
+                    <Col span={8} style={{ textAlign: 'right' }}>
                         <Search placeholder="输入你要搜索的文件" style={{ width: 200 }}
                             onSearch={key => this.props.history.push({ pathname: '/search/' + key })} />
                     </Col>
@@ -271,7 +189,13 @@ export default class Home extends React.Component {
 
                 <Row>
                     <Col span={24} >
-                        <FileList dataSource={data} onChangeFolder={this.onChangeFolder} getIdArray={this.setIdArray} />
+                        <FileList
+                            viewName="home"
+                            dataSource={data}
+                            onChangeFolder={this.onChangeFolder}
+                            ref={this.child}
+                            updateSource={(result) => { this.setState({ data: result }) }}
+                        />
                     </Col>
                 </Row>
             </Fragment>

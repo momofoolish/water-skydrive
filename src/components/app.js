@@ -1,8 +1,13 @@
 import React from 'react';
 import MyLayout from './layout/layout';
+import { BrowserRouter } from 'react-router-dom';
 
 function App() {
-    return <MyLayout />
+    return (
+        <BrowserRouter>
+            <MyLayout />
+        </BrowserRouter>
+    )
 }
 
 export default App;
