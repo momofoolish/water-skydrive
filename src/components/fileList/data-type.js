@@ -102,7 +102,15 @@ function DataType(props) {
                                 : (
                                     <Fragment>
                                         <Button size="small" onClick={() => { setRename(true) }}>重命名</Button>
-                                        <Button size="small">下载</Button>
+                                        {
+                                            props.type === "folder" ? '' :
+                                                (
+                                                    <a href={"/api/download/" + item.id}>
+                                                        <Button size="small">下载</Button>
+                                                    </a>
+                                                )
+                                        }
+
                                     </Fragment>
                                 )
                         )

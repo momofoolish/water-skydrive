@@ -1,5 +1,5 @@
 //上传数据封装
-const uploadFiles = (file,folderId) => {
+const uploadFiles = (file,folderId,category) => {
     let formData = new FormData();
     //判断文件是否超过 1g
     if (file.size > (2 * 1024 * 1024 * 1024)) {
@@ -14,7 +14,7 @@ const uploadFiles = (file,folderId) => {
         formData.append("total", 1);
     }
     formData.append("files", file);         //单个文件
-    formData.append("category", 33);        //##分类id##
+    formData.append("category", category);        //##分类id##
     formData.append("folderId", folderId);   //目录id值
     formData.append("size", file.size);     //文件大小
     formData.append("originalName", file.name);     //文件原始名称
