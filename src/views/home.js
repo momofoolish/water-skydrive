@@ -2,8 +2,9 @@ import React, { Fragment } from 'react';
 import { Row, Col, Button, Input, Breadcrumb, Modal, Spin, message } from 'antd';
 import FileList from '../components/fileList/file-list';
 import ajax from '../utils/ajax';
-import '../css/home.css';
+import { decrypt, encrypt } from '../utils/valid';
 import MyUpLoad from '../components/upload/upload';
+import '../css/home.css';
 
 const { Search } = Input;
 export default class Home extends React.Component {
@@ -55,27 +56,42 @@ export default class Home extends React.Component {
         //初始化页面数据
         ajax.get("/api/info").then((response) => {
             var res = response.data;
-            if (res.code === 0) this.setState({ data: res.data, spinning: false });
+            var dataSrc = JSON.parse(decrypt(res.data));
+            if (res.code === 0) this.setState({ data: dataSrc, spinning: false });
         }).catch(error => { this.setState({ spinning: false, data: '' }); console.log(error) });
     }
 
     //文件夹切换
     onChangeFolder = (parentId, folderId, folderName, e) => {
         e.preventDefault();
+        // console.log("加密前：" + folderId)
+        // var en = encrypt(folderId);
+        // console.log("加密后：" + en)
+        // console.log("解密后：" + decrypt(en))
         //获取folderId文件夹内容
         this.setState({ spinning: true });
-        ajax.get("/api/info/" + folderId).then((response) => {
+        var fid = encrypt(folderId);
+        ajax.get("/api/info/" + fid).then((response) => {
             var res = response.data;
-            if (res.code === 0) this.setState({
-                data: res.data, spinning: false, parentId: parentId, folderId: folderId, folderName,
-                history: this.state.history.concat([{ pid: parentId, id: folderId, name: folderName }]),
-            });
+            if (res.code === 0) {
+                var deData = decrypt(res.data);
+                console.log("解密前：", res.data)
+                console.log("解密后：", deData)
+                this.setState({
+                    data: JSON.parse(deData),
+                    spinning: false,
+                    parentId: parentId, folderId: folderId, folderName: folderName,
+                    history: this.state.history.concat([{
+                        pid: parentId, id: folderId, name: folderName
+                    }]),
+                });
+            }
         }).catch(error => { this.setState({ spinning: false }); console.log(error) });
     }
 
     //返回上一级目录
-    onGoBack = (e) => {
-        e.preventDefault();
+    onGoBack = (event) => {
+        event.preventDefault();
         this.setState({ spinning: true });
         const { pid, id, name } = this.state.history[this.state.history.length - 1];//历史目录属性
         ajax.get("/api/info/" + pid).then((response) => {
@@ -138,7 +154,7 @@ export default class Home extends React.Component {
         const httpSuccess = (result, msg) => {
             message.success(msg);
             this.setState({
-                data: result,
+                data: JSON.parse(decrypt(result)),
                 delLoading: false,
             });
         }

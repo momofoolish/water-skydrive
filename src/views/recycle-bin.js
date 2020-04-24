@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 import { Row, Col, Button, message, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import FileList from '../components/fileList/file-list';
+import { decrypt } from '../utils/valid';
 import ajax from '../utils/ajax';
 import '../css/recycle-bin.css';
 
@@ -34,7 +35,8 @@ export default class RecycleBin extends React.Component {
             reductionFormData.append("sId", sId);
             ajax.del("/api/recycle", reductionFormData).then(response => {
                 var res = response.data;
-                if (res.code === 0) { this.setState({ data: res.data, clearLoading: false, dataLoading: false }); }
+                var dataSrc = JSON.parse(decrypt(res.data));
+                if (res.code === 0) { this.setState({ data: dataSrc, clearLoading: false, dataLoading: false }); }
                 message.success("删除成功！");
             }).catch(error => { console.log(error); this.setState({ clearLoading: false, data: '', }); });
         } else {
@@ -73,8 +75,9 @@ export default class RecycleBin extends React.Component {
     componentDidMount() {
         ajax.get("/api/recycle").then(response => {
             var res = response.data;
+            var dataSrc = JSON.parse(decrypt(res.data));
             if (res.code === 0) {
-                this.setState({ data: res.data, dataLoading: false });
+                this.setState({ data: dataSrc, dataLoading: false });
             }
         }).catch(error => { console.log(error) });
     }

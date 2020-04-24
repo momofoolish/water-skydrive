@@ -3,6 +3,7 @@ import { Button, Progress, message, Modal, Cascader, Input, Divider } from 'antd
 import { UploadOutlined } from '@ant-design/icons';
 import up from '../../utils/uploadFile';
 import ajax from '../../utils/ajax';
+import { decrypt, encrypt } from '../../utils/valid';
 
 export default class MyUpLoad extends React.Component {
 
@@ -31,7 +32,9 @@ export default class MyUpLoad extends React.Component {
             return;
         }
         this.setState({ confirmLoading: true });
-        let formData = up.uploadFiles(file, folderId, selectValue);
+        var fid = encrypt(folderId);
+        var sv = encrypt(selectValue);
+        let formData = up.uploadFiles(file, fid, sv);
         let xhr = new XMLHttpRequest();
         xhr.open('post', 'api/upload', true);
         xhr.onreadystatechange = () => {
@@ -91,7 +94,8 @@ export default class MyUpLoad extends React.Component {
         ajax.get("/api/category").then(response => {
             var res = response.data
             if (res.code === 0) {
-                const map = res.data.map(item => {
+                var dataSource = JSON.parse(decrypt(res.data));
+                const map = dataSource.map(item => {
                     return { value: item.id, label: item.name };
                 });
                 this.setState({ options: map });
